@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Test</title>
+    <style>
+        :root {
+            --background-color: rgb(15, 25, 65);
+            --panel-color: rgb(25, 35, 95);
+            --text-color: rgb(240, 240, 255);
+            --accent-color: rgb(70, 105, 230);
+            --correct-color: rgb(220, 220, 255);
+            --incorrect-color: rgb(255, 70, 70);
+            --current-color: rgb(100, 150, 255);
+            --untyped-color: rgb(150, 160, 200);
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .top-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .test-settings {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        select, button {
+            background-color: var(--accent-color);
+            color: var(--text-color);
+            border: none;
+            padding: 8px 12px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        select {
+            padding-right: 30px;
+        }
+
+        button:hover, select:hover {
+            background-color: rgba(70, 105, 230, 0.8);
+        }
+
+        .text-display {
+            background-color: var(--panel-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 20px;
+            line-height: 1.5;
+        }
+
+        .input-field {
+            background-color: var(--panel-color);
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 20px;
+            margin-bottom: 15px;
+            width: calc(100% - 32px);
+        }
+
+        .info-label {
+            text-align: center;
+            margin-top: 10px;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .word {
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .current {
+            color: var(--current-color);
+        }
+
+        .correct {
+            color: var(--correct-color);
+        }
+
+        .incorrect {
+            color: var(--incorrect-color);
+        }
+
+        .untyped {
+            color: var(--untyped-color);
+        }
+
+        .result-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .result-content {
+            background-color: var(--panel-color);
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+        }
+
+        .result-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .result-stat {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .close-button {
+            display: block;
+            margin: 20px auto 0;
+            padding: 10px 20px;
+        }
+
+        @media (max-width: 600px) {
+            .top-panel {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .stats {
+                margin-top: 10px;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-panel">
+            <div class="test-settings">
+                <select id="test-type">
+                    <option value="15">15 seconds</option>
+                    <option value="30">30 seconds</option>
+                    <option value="60" selected>60 seconds</option>
+                    <option value="120">120 seconds</option>
+                </select>
+                <div id="timer-label">60s</div>
+            </div>
+            <div class="stats">
+                <div id="stats-label">WPM: 0 | Accuracy: 0%</div>
+                <button id="reset-button">Reset Test</button>
+            </div>
+        </div>
+
+        <div id="text-display" class="text-display"></div>
+        <input type="text" id="input-field" class="input-field" placeholder="Type here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        
+        <div class="info-label">Press SPACE after each word. Press TAB to restart.</div>
+    </div>
+
+    <div id="result-modal" class="result-modal">
+        <div class="result-content">
+            <div class="result-title">Test Results</div>
+            <div class="result-stat" id="result-wpm">Words Per Minute: 0</div>
+            <div class="result-stat" id="result-accuracy">Accuracy: 0%</div>
+            <div class="result-stat" id="result-correct">Correct Words: 0</div>
+            <div class="result-stat" id="result-incorrect">Incorrect Words: 0</div>
+            <button class="close-button" id="close-result">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Common words for the test
+        const commonWords = [
+            "the", "be", "to", "of", "and", "a", "in", "that", "have", "I", 
+            "it", "for", "not", "on", "with", "he", "as", "you", "do", "at", 
+            "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", 
+            "or", "an", "will", "my", "one", "all", "would", "there", "their", "what", 
+            "so", "up", "out", "if", "about", "who", "get", "which", "go", "me",
+            "when", "make", "can", "like", "time", "no", "just", "him", "know", "take"
+        ];
+
+        // Elements
+        const displayText = document.getElementById('text-display');
+        const inputField = document.getElementById('input-field');
+        const statsLabel = document.getElementById('stats-label');
+        const timerLabel = document.getElementById('timer-label');
+        const resetButton = document.getElementById('reset-button');
+        const testTypeSelect = document.getElementById('test-type');
+        const resultModal = document.getElementById('result-modal');
+        const resultWpm = document.getElementById('result-wpm');
+        const resultAccuracy = document.getElementById('result-accuracy');
+        const resultCorrect = document.getElementById('result-correct');
+        const resultIncorrect = document.getElementById('result-incorrect');
+        const closeResultButton = document.getElementById('close-result');
+
+        // Test variables
+        let words = [];
+        let currentWordIndex = 0;
+        let correctWords = 0;
+        let incorrectWords = 0;
+        let testActive = false;
+        let startTime;
+        let timer;
+        let secondsElapsed = 0;
+        let testDuration = 60; // Default 60 seconds
+
+        // Initialize the test
+        function initializeTest() {
+            // Generate random text from common words
+            const wordList = [];
+            
+            // Generate about a 100 words for the test
+            for (let i = 0; i < 100; i++) {
+                wordList.push(commonWords[Math.floor(Math.random() * commonWords.length)]);
+            }
+            
+            words = wordList;
+            currentWordIndex = 0;
+            correctWords = 0;
+            incorrectWords = 0;
+            secondsElapsed = 0;
+            testActive = false;
+            
+            // Display the text
+            displayWords();
+            highlightCurrentWord();
+            
+            // Reset stats
+            updateStats(0, 0);
+            timerLabel.textContent = testDuration + 's';
+            
+            // Set focus to input field
+            inputField.value = '';
+            inputField.focus();
+        }
+
+        // Display words in the text display
+        function displayWords() {
+            displayText.innerHTML = '';
+            
+            words.forEach((word, index) => {
+                const wordSpan = document.createElement('span');
+                wordSpan.textContent = word;
+                wordSpan.classList.add('word', 'untyped');
+                wordSpan.setAttribute('data-index', index);
+                displayText.appendChild(wordSpan);
+            });
+        }
+
+        // Highlight the current word
+        function highlightCurrentWord() {
+            if (currentWordIndex >= words.length) {
+                endTest();
+                return;
+            }
+            
+            // Remove current class from all words
+            document.querySelectorAll('.word').forEach(word => {
+                word.classList.remove('current');
+            });
+            
+            // Add current class to current word
+            const currentWord = document.querySelector(`.word[data-index="${currentWordIndex}"]`);
+            if (currentWord) {
+                currentWord.classList.remove('untyped');
+                currentWord.classList.add('current');
+                makeCurrentWordVisible(currentWord);
+            }
+        }
+
+        // Check the current word against what was typed
+        function checkCurrentWord() {
+            if (currentWordIndex >= words.length) return;
+            
+            const typedWord = inputField.value.trim();
+            const currentWord = words[currentWordIndex];
+            
+            // Get the span for the current word
+            const wordSpan = document.querySelector(`.word[data-index="${currentWordIndex}"]`);
+            
+            if (wordSpan) {
+                wordSpan.classList.remove('current', 'untyped');
+                
+                if (typedWord === currentWord) {
+                    // Word is correct
+                    wordSpan.classList.add('correct');
+                    correctWords++;
+                } else {
+                    // Word is incorrect
+                    wordSpan.classList.add('incorrect');
+                    incorrectWords++;
+                }
+            }
+            
+            // Update statistics
+            if (testActive) {
+                const elapsedMinutes = secondsElapsed / 60;
+                const wpm = elapsedMinutes > 0 ? Math.round(correctWords / elapsedMinutes) : 0;
+                const accuracy = (correctWords + incorrectWords) > 0 
+                    ? (correctWords / (correctWords + incorrectWords)) * 100 
+                    : 0;
+                
+                updateStats(wpm, accuracy);
+            }
+        }
+
+        // Start the test
+        function startTest() {
+            testActive = true;
+            startTime = Date.now();
+            
+            // Start the timer
+            timer = setInterval(() => {
+                secondsElapsed++;
+                timerLabel.textContent = (testDuration - secondsElapsed) + 's';
+                
+                // Update WPM in real-time
+                if (secondsElapsed > 0) {
+                    const minutes = secondsElapsed / 60;
+                    const wpm = Math.round(correctWords / minutes);
+                    const accuracy = (correctWords + incorrectWords > 0)
+                        ? (correctWords / (correctWords + incorrectWords)) * 100
+                        : 0;
+                    
+                    updateStats(wpm, accuracy);
+                }
+                
+                // End test when time is up
+                if (secondsElapsed >= testDuration) {
+                    endTest();
+                }
+            }, 1000);
+        }
+
+        // End the test
+        function endTest() {
+            if (!testActive) return;
+            
+            testActive = false;
+            if (timer) {
+                clearInterval(timer);
+            }
+            
+            // Calculate final statistics
+            const minutes = secondsElapsed / 60;
+            const wpm = (minutes > 0) ? Math.round(correctWords / minutes) : 0;
+            const accuracy = (correctWords + incorrectWords > 0)
+                ? (correctWords / (correctWords + incorrectWords)) * 100
+                : 0;
+            
+            updateStats(wpm, accuracy);
+            
+            // Show result modal
+            resultWpm.textContent = `Words Per Minute: ${wpm}`;
+            resultAccuracy.textContent = `Accuracy: ${accuracy.toFixed(2)}%`;
+            resultCorrect.textContent = `Correct Words: ${correctWords}`;
+            resultIncorrect.textContent = `Incorrect Words: ${incorrectWords}`;
+            
+            resultModal.style.display = 'flex';
+        }
+
+        // Reset the test
+        function resetTest() {
+            if (timer) {
+                clearInterval(timer);
+            }
+            initializeTest();
+        }
+
+        // Update statistics display
+        function updateStats(wpm, accuracy) {
+            statsLabel.textContent = `WPM: ${wpm} | Accuracy: ${accuracy.toFixed(2)}%`;
+        }
+
+        // Make the current word visible by scrolling if necessary
+        function makeCurrentWordVisible(element) {
+            if (!element) return;
+            
+            const containerRect = displayText.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+            
+            if (elementRect.bottom > containerRect.bottom || elementRect.top < containerRect.top) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
+
+        // Event Listeners
+        inputField.addEventListener('keydown', (e) => {
+            // Space to check word and move to next
+            if (e.key === ' ') {
+                e.preventDefault(); // Prevent space from being added to the input
+                
+                // Check the current word
+                checkCurrentWord();
+                
+                // Clear input field
+                inputField.value = '';
+                
+                // Move to next word
+                currentWordIndex++;
+                highlightCurrentWord();
+            }
+            
+            // Tab to restart
+            if (e.key === 'Tab') {
+                e.preventDefault(); // Prevent tab from moving focus
+                resetTest();
+            }
+            
+            // Start the test on first keypress
+            if (!testActive && e.key !== 'Tab') {
+                startTest();
+            }
+        });
+
+        resetButton.addEventListener('click', resetTest);
+
+        testTypeSelect.addEventListener('change', () => {
+            testDuration = parseInt(testTypeSelect.value);
+            timerLabel.textContent = testDuration + 's';
+            
+            if (testActive) {
+                resetTest();
+            }
+        });
+
+        closeResultButton.addEventListener('click', () => {
+            resultModal.style.display = 'none';
+            resetTest();
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeTest);
+    </script>
+</body>
+</html>
