@@ -59,11 +59,3 @@ Contributions are welcome! Feel free to open issues or submit pull requests to i
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a pull request
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgements
-
-- Based on a Java Swing typing test application
-- Uses common English words for the typing test
