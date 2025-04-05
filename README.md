@@ -2,7 +2,7 @@
 
 A web-based typing speed test application that measures your typing speed (WPM) and accuracy.
 
-**Live Demo:** [https://your-username.github.io/typing-test](https://rumeshchathuranga.github.io/Typing-Test/)  
+**Live Demo:** [https://rumeshchathuranga.github.io/typing-test](https://rumeshchathuranga.github.io/Typing-Test/)  
 
 
 ## Features
